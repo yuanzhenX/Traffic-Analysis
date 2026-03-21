@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析 - 校园主干道人流车流分析系统</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <link rel="stylesheet" href="./static/css/main.css">
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 140px);
+            background: var(--bg-white);
+            border-radius: var(--card-radius);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .message-item.user {
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+        }
+        
+        .message-item.ai {
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .message-item.ai .message-avatar {
+            background: var(--primary-light);
+            margin-right: 12px;
+        }
+        
+        .message-item.user .message-avatar {
+            background: #e1f3d8;
+            margin-left: 12px;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+        
+        .message-item.user .message-content {
+            margin-left: 12px;
+            margin-right: 0;
+        }
+        
+        .message-item.ai .message-content {
+            margin-left: 0;
+            margin-right: 12px;
+        }
+        
+        .message-item.ai .message-content {
+            background: var(--bg-base);
+            color: var(--text-primary);
+        }
+        
+        .message-item.user .message-content {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        
+        .message-content h3 {
+            margin: 12px 0 8px;
+            font-size: 16px;
+            color: inherit;
+        }
+        
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .message-content li {
+            margin: 4px 0;
+        }
+        
+        .message-content strong {
+            color: inherit;
+            font-weight: 600;
+        }
+        
+        .chat-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-light);
+            background: #fff;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .chat-textarea {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: none;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+        
+        .chat-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-send {
+            padding: 12px 24px;
+            height: 44px;
+        }
+        
+        .quick-questions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        
+        .quick-question {
+            padding: 6px 12px;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .quick-question:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .welcome-message h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🚦 交通分析系统</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">系统主页</span>
+                </a>
+                <a href="analysis.html" class="nav-item">
+                    <span class="nav-icon">🎥</span>
+                    <span class="nav-text">视频分析</span>
+                </a>
+                <a href="visualize.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">数据可视化</span>
+                </a>
+                <a href="ai.html" class="nav-item active">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-text">AI分析</span>
+                </a>
+                <a href="history.html" class="nav-item">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-text">历史数据</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="page-header">
+                <h2>AI智能分析</h2>
+                <p class="subtitle">与AI助手对话，获取交通数据分析建议</p>
+            </header>
+
+            <div class="chat-container">
+                <!-- 消息区域 -->
+                <div id="chat-messages" class="chat-messages">
+                    <div class="welcome-message">
+                        <h3>👋 欢迎使用AI分析助手</h3>
+                        <p>我可以帮您分析交通数据、识别人流车流趋势、提供优化建议</p>
+                    </div>
+                </div>
+
+                <!-- 快捷问题 -->
+                <div style="padding: 0 20px;">
+                    <div class="quick-questions">
+                        <button class="quick-question" onclick="sendQuickQuestion('分析今日交通高峰期')">分析今日交通高峰期</button>
+                        <button class="quick-question" onclick="sendQuickQuestion('人车比例如何？')">人车比例如何？</button>
+                        <button class="quick-question" onclick="sendQuickQuestion('交通密度分析')">交通密度分析</button>
+                        <button class="quick-question" onclick="sendQuickQuestion('给出优化建议')">给出优化建议</button>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="chat-input-area">
+                    <div class="input-wrapper">
+                        <label for="chat-input"></label><textarea
+                            id="chat-input" 
+                            class="chat-textarea" 
+                            placeholder="输入您的问题..."
+                            rows="1"
+                            onkeydown="handleKeyDown(event)"
+                            oninput="autoResize(this)"
+                        ></textarea>
+                        <button class="btn btn-primary btn-send" onclick="sendMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/utils.js"></script>
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            highlightCurrentNav();
+        });
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = '44px';
+            
+            // 显示AI正在输入
+            showTypingIndicator();
+            
+            try {
+                const result = await post('/api/ai_analysis', { question: message });
+                removeTypingIndicator();
+                addMessage(result.answer, 'ai');
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('抱歉，分析失败，请稍后重试。', 'ai');
+            }
+        }
+
+        // 发送快捷问题
+        async function sendQuickQuestion(question) {
+            const input = document.getElementById('chat-input');
+            input.value = question;
+            
+            // 添加用户消息
+            addMessage(question, 'user');
+            input.value = '';
+            input.style.height = '44px';
+            
+            // 显示AI正在输入
+            showTypingIndicator();
+            
+            // 根据问题内容映射到对应的分析类型
+            let analysisType = '';
+            if (question.includes('高峰期')) {
+                analysisType = 'peak';
+            } else if (question.includes('比例')) {
+                analysisType = 'ratio';
+            } else if (question.includes('密度') || question.includes('趋势')) {
+                analysisType = 'trend';
+            } else if (question.includes('建议')) {
+                analysisType = 'peak';
+            }
+            
+            try {
+                const result = await post('/api/ai_quick_analysis', { analysis_type: analysisType });
+                removeTypingIndicator();
+                addMessage(result.answer, 'ai');
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('抱歉，快捷分析失败，请稍后重试。', 'ai');
+            }
+        }
+
+        // 添加消息到聊天区域
+        function addMessage(content, type) {
+            const container = document.getElementById('chat-messages');
+            
+            // 移除欢迎消息
+            const welcome = container.querySelector('.welcome-message');
+            if (welcome) welcome.remove();
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = `message-item ${type}`;
+            
+            const avatar = type === 'ai' ? '🤖' : '👤';
+            const displayContent = type === 'ai' ? renderMarkdown(content) : escapeHtml(content);
+            
+            messageEl.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${displayContent}</div>
+            `;
+            
+            container.appendChild(messageEl);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 显示正在输入指示器
+        function showTypingIndicator() {
+            const container = document.getElementById('chat-messages');
+            const indicator = document.createElement('div');
+            indicator.id = 'typing-indicator';
+            indicator.className = 'message-item ai';
+            indicator.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(indicator);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 移除正在输入指示器
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        // 渲染Markdown
+        function renderMarkdown(text) {
+            if (!text) return '';
+            // 先压缩多余的换行，将2个及以上换行压缩为1个
+            let processed = text
+                .replace(/\n{2,}/g, '\n')
+                .trim();
+            // 处理Markdown格式
+            processed = processed
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>');
+            // 将列表项包裹在ul中
+            processed = processed.replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>');
+            // 最后处理换行：段内保留单换行，但减少连续换行
+            processed = processed.replace(/\n/g, '<br>');
+            return processed;
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 处理键盘事件
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 自动调整文本框高度
+        function autoResize(textarea) {
+            textarea.style.height = '44px';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+    </script>
+</body>
+</html>

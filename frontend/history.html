@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史数据 - 校园主干道人流车流分析系统</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: var(--bg-white);
+            border-radius: var(--card-radius);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-item label {
+            font-size: 14px;
+            color: var(--text-regular);
+            white-space: nowrap;
+        }
+        
+        .filter-item input,
+        .filter-item select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .filter-item input:focus,
+        .filter-item select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .data-table th {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .data-table th:hover {
+            background: #e4e7ed;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 16px;
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pagination .page-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            background: var(--bg-white);
+            padding: 16px;
+            border-radius: var(--card-radius);
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        
+        .summary-item h4 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .summary-item .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🚦 交通分析系统</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/index.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">系统主页</span>
+                </a>
+                <a href="/analysis.html" class="nav-item">
+                    <span class="nav-icon">🎥</span>
+                    <span class="nav-text">视频分析</span>
+                </a>
+                <a href="/visualize.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">数据可视化</span>
+                </a>
+                <a href="/ai.html" class="nav-item">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-text">AI分析</span>
+                </a>
+                <a href="/history.html" class="nav-item active">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-text">历史数据</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="page-header">
+                <h2>历史数据</h2>
+                <p class="subtitle">查询和导出历史交通统计数据</p>
+            </header>
+
+            <!-- 统计摘要 -->
+            <div class="stats-summary" id="stats-summary">
+                <div class="summary-item">
+                    <h4>总记录数</h4>
+                    <div class="value" id="total-records">--</div>
+                </div>
+                <div class="summary-item">
+                    <h4>总人流量</h4>
+                    <div class="value" id="total-persons">--</div>
+                </div>
+                <div class="summary-item">
+                    <h4>总车流量</h4>
+                    <div class="value" id="total-vehicles">--</div>
+                </div>
+                <div class="summary-item">
+                    <h4>平均速度</h4>
+                    <div class="value" id="avg-speed">--</div>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <label>开始日期:</label>
+                    <input type="date" id="filter-start-date">
+                </div>
+                <div class="filter-item">
+                    <label>结束日期:</label>
+                    <input type="date" id="filter-end-date">
+                </div>
+                <div class="filter-item">
+                    <label>类型:</label>
+                    <select id="filter-type">
+                        <option value="">全部</option>
+                        <option value="person">行人</option>
+                        <option value="vehicle">车辆</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="applyFilter()">🔍 查询</button>
+                <button class="btn btn-default" onclick="resetFilter()">重置</button>
+                <div class="export-buttons" style="margin-left: auto;">
+                    <button class="btn btn-success" onclick="exportData('csv')">📥 导出CSV</button>
+                    <button class="btn btn-success" onclick="exportData('json')">📥 导出JSON</button>
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="card">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable('time_slot')">时间 ⬍</th>
+                                <th onclick="sortTable('person_count')">人流量 ⬍</th>
+                                <th onclick="sortTable('vehicle_count')">车流量 ⬍</th>
+                                <th onclick="sortTable('avg_speed')">平均速度 ⬍</th>
+                                <th onclick="sortTable('density')">密度 ⬍</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-tbody">
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    <div class="empty-state-text">请选择日期范围查询数据</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination" id="pagination" style="display: none;">
+                    <button onclick="changePage(-1)" id="btn-prev">上一页</button>
+                    <span class="page-info">第 <span id="current-page">1</span> 页 / 共 <span id="total-pages">1</span> 页</span>
+                    <button onclick="changePage(1)" id="btn-next">下一页</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/utils.js"></script>
+    <script>
+        // 全局状态
+        let currentPage = 1;
+        let pageSize = 20;
+        let totalPages = 1;
+        let currentData = [];
+        let sortField = 'time_slot';
+        let sortOrder = 'desc';
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            highlightCurrentNav();
+            
+            // 设置默认日期范围（今天）
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filter-start-date').value = today;
+            document.getElementById('filter-end-date').value = today;
+            
+            // 加载数据
+            loadData();
+        });
+
+        // 加载数据
+        async function loadData() {
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+            
+            if (!startDate || !endDate) {
+                showMessage('请选择日期范围', 'warning');
+                return;
+            }
+            
+            const startTime = new Date(startDate + 'T00:00:00').toISOString();
+            const endTime = new Date(endDate + 'T23:59:59').toISOString();
+            
+            try {
+                const data = await get(`/api/traffic_stats?start_time=${startTime}&end_time=${endTime}`);
+                currentData = data.stats || [];
+                
+                // 更新统计摘要
+                updateSummary(currentData);
+                
+                // 渲染表格
+                renderTable();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showMessage('加载数据失败', 'error');
+            }
+        }
+
+        // 更新统计摘要
+        function updateSummary(data) {
+            const totalRecords = data.length;
+            const totalPersons = data.reduce((sum, item) => sum + (item.person_count || 0), 0);
+            const totalVehicles = data.reduce((sum, item) => sum + (item.vehicle_count || 0), 0);
+            const avgSpeed = data.length > 0 
+                ? data.reduce((sum, item) => sum + (item.avg_speed || 0), 0) / data.length 
+                : 0;
+            
+            document.getElementById('total-records').textContent = totalRecords;
+            document.getElementById('total-persons').textContent = totalPersons.toLocaleString();
+            document.getElementById('total-vehicles').textContent = totalVehicles.toLocaleString();
+            document.getElementById('avg-speed').textContent = avgSpeed.toFixed(1);
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('data-tbody');
+            
+            // 排序
+            const sortedData = [...currentData].sort((a, b) => {
+                let aVal = a[sortField];
+                let bVal = b[sortField];
+                
+                if (sortOrder === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            // 分页
+            totalPages = Math.ceil(sortedData.length / pageSize) || 1;
+            const start = (currentPage - 1) * pageSize;
+            const pageData = sortedData.slice(start, start + pageSize);
+            
+            if (pageData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-state-text">暂无数据</div>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+            
+            tbody.innerHTML = pageData.map(item => `
+                <tr>
+                    <td>${formatDate(item.time_slot, 'YYYY-MM-DD HH:mm')}</td>
+                    <td>${item.person_count || 0}</td>
+                    <td>${item.vehicle_count || 0}</td>
+                    <td>${(item.avg_speed || 0).toFixed(1)} px/s</td>
+                    <td>${(item.density || 0).toFixed(6)}</td>
+                </tr>
+            `).join('');
+            
+            // 更新分页
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+            document.getElementById('btn-prev').disabled = currentPage === 1;
+            document.getElementById('btn-next').disabled = currentPage === totalPages;
+            document.getElementById('pagination').style.display = totalPages > 1 ? 'flex' : 'none';
+        }
+
+        // 排序
+        function sortTable(field) {
+            if (sortField === field) {
+                sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortOrder = 'desc';
+            }
+            currentPage = 1;
+            renderTable();
+        }
+
+        // 切换页码
+        function changePage(delta) {
+            currentPage += delta;
+            currentPage = Math.max(1, Math.min(currentPage, totalPages));
+            renderTable();
+        }
+
+        // 应用筛选
+        function applyFilter() {
+            currentPage = 1;
+            loadData();
+        }
+
+        // 重置筛选
+        function resetFilter() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filter-start-date').value = today;
+            document.getElementById('filter-end-date').value = today;
+            document.getElementById('filter-type').value = '';
+            currentPage = 1;
+            loadData();
+        }
+
+        // 导出数据
+        function exportData(format) {
+            if (currentData.length === 0) {
+                showMessage('没有数据可导出', 'warning');
+                return;
+            }
+            
+            if (format === 'csv') {
+                const headers = ['时间', '人流量', '车流量', '平均速度', '密度'];
+                const rows = currentData.map(item => [
+                    item.time_slot,
+                    item.person_count,
+                    item.vehicle_count,
+                    item.avg_speed,
+                    item.density
+                ]);
+                
+                const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                downloadFile(csv, 'traffic_data.csv', 'text/csv');
+            } else {
+                const json = JSON.stringify(currentData, null, 2);
+                downloadFile(json, 'traffic_data.json', 'application/json');
+            }
+            
+            showMessage('导出成功', 'success');
+        }
+
+        // 下载文件
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
