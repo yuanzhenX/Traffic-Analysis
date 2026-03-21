@@ -12,11 +12,15 @@ const state = {
     currentFile: null,
     roiPoints: [],
     ws: null,
-    frameData: null, // 用于ROI设置的帧数据
+    frameData: null, // 用于 ROI 设置的帧数据
     roiCanvas: null,
     roiCtx: null,
     roiImage: null,
-    roiSet: false // ROI是否已设置
+    roiSet: false, // ROI 是否已设置
+    directionAngle: 0, // 北方方向角度（相对于屏幕上方）
+    directionCanvas: null,
+    directionCtx: null,
+    directionSet: false // 方向是否已设置
 };
 
 // ============================================
@@ -31,6 +35,12 @@ function initEventListeners() {
     // 文件上传监听
     const videoInput = document.getElementById('videoInput');
     videoInput.addEventListener('change', handleFileSelect);
+    
+    // 方向角度滑块监听
+    const directionSlider = document.getElementById('directionAngle');
+    if (directionSlider) {
+        directionSlider.addEventListener('input', handleDirectionChange);
+    }
 }
 
 // ============================================
@@ -74,15 +84,13 @@ async function handleFileSelect(event) {
             state.currentFile = result.filename;
             state.sourceType = 'file';
             state.isConnected = true;
-            
-            // 获取视频帧用于预览和ROI设置
+                    
+            // 获取视频帧用于预览和 ROI 设置
             await loadVideoFrame(result.filename);
-            
-            showMessage('视频上传成功，请设置ROI区域', 'success');
+                    
+            showMessage('视频上传成功，请设置 ROI 区域和方向标定', 'success');
             updateUIState();
-            
-            // 提示设置ROI
-            showROIPrompt(true);
+            updateSetupPrompt();
         } else {
             throw new Error(result.message || '上传失败');
         }
@@ -111,11 +119,11 @@ async function connectCamera() {
         state.sourceType = 'camera';
         state.isConnected = true;
         state.currentFile = null;
-        
-        // 使用默认图像提示用户设置ROI
-        showMessage('摄像头已连接，请设置ROI区域', 'success');
+                
+        // 使用默认图像提示用户设置 ROI
+        showMessage('摄像头已连接，请设置 ROI 区域和方向标定', 'success');
         updateUIState();
-        showROIPrompt(true);
+        updateSetupPrompt();
         
         // 尝试获取摄像头预览帧
         await loadCameraFrame();
@@ -376,15 +384,15 @@ function updateStats(stats) {
     // 更新主要统计
     document.getElementById('statPersonCount').textContent = stats.person_count || 0;
     document.getElementById('statVehicleCount').textContent = stats.vehicle_count || 0;
+    document.getElementById('statTotalCount').textContent = stats.total_count || 0;
     document.getElementById('statAvgSpeed').innerHTML = `${(stats.avg_speed || 0).toFixed(1)} <span class="unit">px/s</span>`;
-    document.getElementById('statDensity').innerHTML = `${(stats.density || 0).toFixed(4)} <span class="unit">目标/像素²</span>`;
     
     // 更新方向统计
     if (stats.direction_counts) {
-        document.getElementById('dirNorth').textContent = stats.direction_counts.north || 0;
-        document.getElementById('dirSouth').textContent = stats.direction_counts.south || 0;
-        document.getElementById('dirWest').textContent = stats.direction_counts.west || 0;
-        document.getElementById('dirEast').textContent = stats.direction_counts.east || 0;
+        document.getElementById('dirNorth').textContent = stats.direction_counts['North'] || 0;
+        document.getElementById('dirSouth').textContent = stats.direction_counts['South'] || 0;
+        document.getElementById('dirWest').textContent = stats.direction_counts['West'] || 0;
+        document.getElementById('dirEast').textContent = stats.direction_counts['East'] || 0;
     }
     
     // 更新处理帧率
@@ -419,6 +427,9 @@ function initROICanvas() {
     state.roiCanvas = canvas;
     state.roiCtx = ctx;
     state.roiPoints = [];
+    
+    // 初始化方向画布
+    initDirectionCanvas();
     
     // 加载图像
     const img = new Image();
@@ -540,6 +551,85 @@ function clearROIPoints() {
     drawROI();
 }
 
+// ============================================
+// 方向标定功能
+// ============================================
+function handleDirectionChange(e) {
+    const angle = parseInt(e.target.value);
+    state.directionAngle = angle;
+    document.getElementById('angleValue').textContent = `${angle}°`;
+    drawDirectionArrow(angle);
+}
+
+function initDirectionCanvas() {
+    const canvas = document.getElementById('directionCanvas');
+    if (!canvas) return;
+    
+    state.directionCanvas = canvas;
+    state.directionCtx = canvas.getContext('2d');
+    
+    // 初始化绘制
+    drawDirectionArrow(0);
+}
+
+function drawDirectionArrow(angle) {
+    const ctx = state.directionCtx;
+    const canvas = state.directionCanvas;
+    if (!ctx || !canvas) return;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 35;
+    
+    // 清空画布
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 转换为弧度（角度 0 度指向屏幕上方，顺时针旋转）
+    const radian = (angle - 90) * Math.PI / 180;
+    
+    // 计算箭头终点
+    const endX = centerX + Math.cos(radian) * radius;
+    const endY = centerY + Math.sin(radian) * radius;
+    
+    // 绘制箭头
+    ctx.beginPath();
+    ctx.strokeStyle = '#F56C6C';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    
+    // 箭杆
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    
+    // 箭头头部
+    const arrowSize = 8;
+    const arrowAngle = Math.PI / 6; // 30 度
+    
+    ctx.beginPath();
+    ctx.fillStyle = '#F56C6C';
+    
+    // 左翼
+    const leftX = endX - arrowSize * Math.cos(radian - arrowAngle);
+    const leftY = endY - arrowSize * Math.sin(radian - arrowAngle);
+    
+    // 右翼
+    const rightX = endX - arrowSize * Math.cos(radian + arrowAngle);
+    const rightY = endY - arrowSize * Math.sin(radian + arrowAngle);
+    
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(leftX, leftY);
+    ctx.lineTo(rightX, rightY);
+    ctx.closePath();
+    ctx.fill();
+    
+    // 绘制中心点
+    ctx.beginPath();
+    ctx.fillStyle = '#409EFF';
+    ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 async function confirmROI() {
     if (state.roiPoints.length < 3) {
         showMessage('请至少设置3个点形成有效区域', 'warning');
@@ -576,19 +666,16 @@ async function confirmROI() {
         const response = await post('/api/set_roi', {
             points: state.roiPoints,
             video_width: videoWidth,
-            video_height: videoHeight
+            video_height: videoHeight,
+            direction_angle: state.directionAngle // 发送方向角度
         });
         
         if (response.success) {
-            showMessage('ROI区域已设置', 'success');
-            closeROIModal();
-            showROIPrompt(false);
-            
-            // 标记ROI已设置
+            showMessage('ROI 区域已设置', 'success');
             state.roiSet = true;
-            
-            // 启用开始检测按钮
-            document.getElementById('btnStart').disabled = false;
+            closeROIModal();
+            updateSetupPrompt();
+            updateUIState();
         } else {
             throw new Error(response.message || '设置失败');
         }
@@ -600,7 +687,7 @@ async function confirmROI() {
 }
 
 // ============================================
-// UI状态管理
+// UI 状态管理
 // ============================================
 function updateUIState() {
     const btnUpload = document.getElementById('btnUpload');
@@ -608,6 +695,7 @@ function updateUIState() {
     const btnStart = document.getElementById('btnStart');
     const btnStop = document.getElementById('btnStop');
     const btnROI = document.getElementById('btnROI');
+    const btnDirection = document.getElementById('btnDirection');
     
     // 更新视频源显示
     const sourceText = state.sourceType === 'camera' ? '摄像头' : 
@@ -621,13 +709,29 @@ function updateUIState() {
         btnStart.disabled = true;
         btnStop.disabled = false;
         btnROI.disabled = true;
+        btnDirection.disabled = true;
     } else {
         // 未检测状态
         btnUpload.disabled = false;
         btnCamera.disabled = false;
-        btnStart.disabled = !(state.isConnected && state.roiSet); // 连接且设置ROI后才可开始
+        btnROI.disabled = !state.isConnected; // 连接后才可设置 ROI
+        btnDirection.disabled = !state.isConnected; // 连接后才可设置方向
+        
+        // 只有 ROI 和方向都设置后，才能开始检测
+        btnStart.disabled = !(state.isConnected && state.roiSet && state.directionSet);
         btnStop.disabled = true;
-        btnROI.disabled = !state.isConnected; // 连接后才可设置ROI
+    }
+}
+
+// 更新提示信息
+function updateSetupPrompt() {
+    const prompt = document.getElementById('setupPrompt');
+    
+    // 如果已连接且未全部设置，则显示提示
+    if (state.isConnected && (!state.roiSet || !state.directionSet)) {
+        prompt.style.display = 'flex';
+    } else {
+        prompt.style.display = 'none';
     }
 }
 
@@ -647,11 +751,6 @@ function showLoading(show) {
     }
 }
 
-function showROIPrompt(show) {
-    const roiPrompt = document.getElementById('roiPrompt');
-    roiPrompt.style.display = show ? 'flex' : 'none';
-}
-
 function showStatusIndicator(show) {
     const indicator = document.getElementById('statusIndicator');
     const statusText = document.getElementById('statusText');
@@ -664,11 +763,100 @@ function showStatusIndicator(show) {
     }
 }
 
+// ============================================
+// 方向标定功能（独立弹窗）
+// ============================================
+function openDirectionModal() {
+    if (!state.isConnected) {
+        showMessage('请先上传视频或连接摄像头', 'warning');
+        return;
+    }
+    
+    const modal = document.getElementById('directionModal');
+    modal.style.display = 'flex';
+    
+    // 加载视频帧到方向标定弹窗
+    loadDirectionVideoFrame();
+    
+    // 初始化方向画布
+    initDirectionCanvas();
+    
+    // 设置当前角度值
+    const slider = document.getElementById('directionAngle');
+    slider.value = state.directionAngle;
+    document.getElementById('angleValue').textContent = `${state.directionAngle}°`;
+    drawDirectionArrow(state.directionAngle);
+}
+
+// 加载视频帧到方向标定弹窗
+function loadDirectionVideoFrame() {
+    const directionVideoFrame = document.getElementById('directionVideoFrame');
+    
+    if (state.sourceType === 'file' && state.frameData) {
+        // 使用已保存的帧数据
+        directionVideoFrame.src = state.frameData;
+        directionVideoFrame.style.display = 'block';
+        
+        // 等待图片加载后调整 canvas 尺寸
+        directionVideoFrame.onload = () => {
+            const overlayCanvas = document.getElementById('directionOverlayCanvas');
+            // 设置 canvas 尺寸与实际显示的视频尺寸一致
+            overlayCanvas.width = directionVideoFrame.clientWidth;
+            overlayCanvas.height = directionVideoFrame.clientHeight;
+            console.log('[方向标定] Canvas 尺寸:', overlayCanvas.width, 'x', overlayCanvas.height);
+        };
+    } else {
+        // 摄像头模式：使用占位图或提示
+        directionVideoFrame.style.display = 'none';
+    }
+}
+
+function closeDirectionModal() {
+    const modal = document.getElementById('directionModal');
+    modal.style.display = 'none';
+}
+
+function resetDirectionAngle() {
+    state.directionAngle = 0;
+    const slider = document.getElementById('directionAngle');
+    slider.value = 0;
+    document.getElementById('angleValue').textContent = '0°';
+    drawDirectionArrow(0);
+}
+
+async function confirmDirection() {
+    try {
+        // 发送方向角度到后端
+        const response = await post('/api/set_roi', {
+            points: state.roiPoints || [], // 只更新角度，保持 ROI 不变
+            direction_angle: state.directionAngle
+        });
+        
+        if (response.success) {
+            showMessage('方向标定已完成', 'success');
+            state.directionSet = true;
+            closeDirectionModal();
+            updateSetupPrompt();
+            updateUIState();
+        } else {
+            throw new Error(response.message || '设置失败');
+        }
+    } catch (error) {
+        console.error('设置方向错误:', error);
+        showMessage('设置方向失败：' + error.message, 'error');
+    }
+}
+
 // 点击弹窗外部关闭
 window.onclick = (event) => {
-    const modal = document.getElementById('roiModal');
-    if (event.target === modal) {
+    const roiModal = document.getElementById('roiModal');
+    const directionModal = document.getElementById('directionModal');
+    
+    if (event.target === roiModal) {
         closeROIModal();
+    }
+    if (event.target === directionModal) {
+        closeDirectionModal();
     }
 };
 

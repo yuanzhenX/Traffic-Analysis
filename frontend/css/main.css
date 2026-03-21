@@ -295,6 +295,15 @@ body {
     color: #fff;
 }
 
+.btn-info {
+    background: var(--info-color);
+    color: #fff;
+}
+
+.btn-info:hover {
+    background: var(--info-dark);
+}
+
 .btn-default {
     background: #fff;
     color: var(--text-regular);

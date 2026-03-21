@@ -319,12 +319,12 @@ class TrajectoryManager:
         direction = manager.get_direction(track_id)
     """
     
-    def __init__(self, max_history: int = 90):
+    def __init__(self, max_history: int = 30):
         """
         初始化轨迹管理器
-        
+            
         参数:
-            max_history: 最大历史长度（帧数），默认90帧（约3秒@30fps）
+            max_history: 最大历史长度（帧数），默认 30 帧（约 1 秒@30fps）
         """
         # 存储每个目标的轨迹历史
         # key: track_id, value: 双端队列存储位置点
@@ -493,8 +493,11 @@ class DetectionPipeline:
             max_history=VideoConfig.TRACK_HISTORY_LENGTH
         )
         
-        # ROI区域（多边形顶点列表）
+        # ROI 区域（多边形顶点列表）
         self.roi_points: Optional[List[Tuple[int, int]]] = None
+                
+        # 北方方向角度（相对于屏幕上方，顺时针）
+        self.direction_angle: float = 0.0
         
         # 当前活跃的跟踪ID集合
         self.active_tracks: set = set()
@@ -503,14 +506,24 @@ class DetectionPipeline:
     
     def set_roi(self, points: List[Tuple[int, int]]) -> None:
         """
-        设置ROI区域
-        
+        设置 ROI 区域
+                
         参数:
             points: 多边形顶点坐标列表 [(x1,y1), (x2,y2), ...]
-                   如果为None或空列表，则使用全画面
+                   如果为 None 或空列表，则使用全画面
         """
         self.roi_points = points if points else None
-        print(f"[检测管道] ROI区域已设置: {points}")
+        print(f"[检测管道] ROI 区域已设置：{points}")
+        
+    def set_direction_angle(self, angle: float) -> None:
+        """
+        设置北方方向角度
+                
+        参数:
+            angle: 北方方向角度（相对于屏幕上方，顺时针）
+        """
+        self.direction_angle = angle
+        print(f"[检测管道] 北方方向角度已设置：{angle}°")
     
     def is_in_roi(self, point: Tuple[int, int]) -> bool:
         """
@@ -538,6 +551,56 @@ class DetectionPipeline:
         result = cv2.pointPolygonTest(roi_array, point, False)
         
         return result >= 0
+    
+    def _convert_direction(self, raw_direction: str) -> str:
+        """
+        根据北方方向角度转换实际方向
+        
+        原理：
+            - 默认情况下（角度=0），屏幕上方为北，下方为南，左西右东
+            - 当用户设置北方角度后，需要旋转方向判断
+            - 例如：北方角度=90°时，屏幕右侧为北，左侧为南
+        
+        参数:
+            raw_direction: 基于屏幕坐标的原始方向（North/South/East/West）
+            
+        返回:
+            str: 实际地理方向
+        """
+        if raw_direction == "Unknown":
+            return raw_direction
+        
+        # 如果未设置角度或角度为 0，直接返回原始方向
+        if self.direction_angle == 0.0:
+            return raw_direction
+        
+        # 定义方向到角度的映射（以屏幕上方为 0°，顺时针）
+        direction_angles = {
+            "North": 0,      # 向上
+            "East": 90,      # 向右
+            "South": 180,    # 向下
+            "West": 270      # 向左
+        }
+        
+        # 获取原始方向的角度
+        raw_angle = direction_angles.get(raw_direction, 0)
+        
+        # 加上北方偏移角度，得到实际地理方向的角度
+        actual_angle = (raw_angle + self.direction_angle) % 360
+        
+        # 将角度转换回方向（每个方向占 90°）
+        # 0-45°和 315-360° → North
+        # 45-135° → East
+        # 135-225° → South
+        # 225-315° → West
+        if actual_angle < 45 or actual_angle >= 315:
+            return "North"
+        elif actual_angle < 135:
+            return "East"
+        elif actual_angle < 225:
+            return "South"
+        else:
+            return "West"
     
     def process(self, frame: np.ndarray, frame_id: int = 0) -> FrameResult:
         """
@@ -589,7 +652,10 @@ class DetectionPipeline:
             
             # 计算速度和方向
             speed = self.trajectory_manager.get_speed(track_id)
-            direction = self.trajectory_manager.get_direction(track_id)
+            raw_direction = self.trajectory_manager.get_direction(track_id)
+            
+            # 根据北方方向角度转换实际方向
+            direction = self._convert_direction(raw_direction)
             
             # 获取轨迹历史
             trajectory = self.trajectory_manager.get_trajectory(track_id)

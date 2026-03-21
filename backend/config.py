@@ -130,9 +130,9 @@ class VideoConfig:
     FRAME_WIDTH: int = 960
     FRAME_HEIGHT: int = 540
     
-    # 轨迹历史长度: 90帧（约3秒，按30fps计算）
-    # 记录每个目标最近90帧的位置，用于计算速度和方向
-    TRACK_HISTORY_LENGTH: int = 90
+    # 轨迹历史长度：30 帧（约 1 秒，按 30fps 计算）
+    # 记录每个目标最近 30 帧的位置，用于计算速度和方向
+    TRACK_HISTORY_LENGTH: int = 30
     
     # 速度计算的时间窗口（秒）
     # 用于平滑速度计算，避免单帧噪声

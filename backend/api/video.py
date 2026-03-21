@@ -47,10 +47,11 @@ router = APIRouter(
 
 # 数据模型
 class ROIRequest(BaseModel):
-    """ROI设置请求模型"""
+    """ROI 设置请求模型"""
     points: List[List[int]]  # [[x1,y1], [x2,y2], ...]
     video_width: Optional[int] = None  # 原始视频宽度，用于坐标转换
     video_height: Optional[int] = None  # 原始视频高度，用于坐标转换
+    direction_angle: Optional[float] = 0.0  # 北方方向角度（相对于屏幕上方，顺时针）
 
 
 class VideoControlRequest(BaseModel):
@@ -377,6 +378,11 @@ async def set_roi(
         # 设置到视频处理器
         processor = get_video_processor()
         processor.set_roi(points)
+        
+        # 设置方向角度（如果提供了）
+        if hasattr(request, 'direction_angle') and request.direction_angle is not None:
+            processor.set_direction_angle(request.direction_angle)
+            print(f"[ROI 设置] 北方方向角度：{request.direction_angle}°")
 
         return {
             "success": True,

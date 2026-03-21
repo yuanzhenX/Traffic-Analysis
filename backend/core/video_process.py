@@ -316,8 +316,11 @@ class VideoProcessor:
         self.start_time: Optional[float] = None
         self.processing_fps: float = 0.0
         
-        # ROI区域设置
+        # ROI 区域设置
         self.roi_points: Optional[List[tuple]] = None
+                
+        # 北方方向角度（相对于屏幕上方，顺时针）
+        self.direction_angle: float = 0.0
         
         # 回调函数（用于发送结果）
         self.on_frame_processed: Optional[Callable] = None
@@ -326,15 +329,27 @@ class VideoProcessor:
     
     def set_roi(self, points: List[tuple]) -> None:
         """
-        设置ROI区域
-        
+        设置 ROI 区域
+            
         参数:
             points: 多边形顶点列表 [(x1,y1), (x2,y2), ...]
         """
         self.roi_points = points
         if self.pipeline is not None:
             self.pipeline.set_roi(points)
-        print(f"[视频处理器] ROI已设置: {points}")
+        print(f"[视频处理器] ROI 已设置：{points}")
+        
+    def set_direction_angle(self, angle: float) -> None:
+        """
+        设置北方方向角度
+            
+        参数:
+            angle: 北方方向角度（相对于屏幕上方，顺时针）
+        """
+        self.direction_angle = angle
+        if self.pipeline is not None:
+            self.pipeline.set_direction_angle(angle)
+        print(f"[视频处理器] 北方方向角度已设置：{angle}°")
     
     async def start(
         self, 
@@ -378,14 +393,23 @@ class VideoProcessor:
             original_fps = self.capture.video_info.fps if self.capture.video_info else 30.0
             target_fps = min(original_fps, VideoConfig.MAX_FPS)
             
-            # 计算跳帧间隔（每N帧处理1帧）
+            # 计算初始跳帧间隔（每 N 帧处理 1 帧）
             frame_skip = max(1, int(round(original_fps / target_fps)))
             
-            print(f"[视频处理器] 原始帧率: {original_fps:.1f}fps, 目标帧率: {target_fps:.1f}fps, 跳帧间隔: 每{frame_skip}帧处理1帧")
+            # 计算每帧的目标时间间隔（秒）
+            frame_duration = 1.0 / target_fps
+            
+            print(f"[视频处理器] 原始帧率：{original_fps:.1f}fps, 目标帧率：{target_fps:.1f}fps, 初始跳帧间隔：每{frame_skip}帧处理 1 帧，帧间隔：{frame_duration*1000:.1f}ms")
             
             # 主处理循环
             frame_id = 0
             processed_count = 0
+            start_time = time.time()  # 记录开始时间
+            expected_frame_time = start_time  # 预期帧发送时间（初始为开始时间）
+            
+            # 【动态跳帧】记录最近处理耗时，用于自适应调整
+            recent_processing_times = []
+            max_recent_count = 10  # 保留最近 10 次的处理时间
             
             # 等待回调函数被设置（最多等待10秒）
             wait_count = 0
@@ -422,6 +446,7 @@ class VideoProcessor:
                     continue
                 
                 processed_count += 1
+                current_time = time.time()
                 
                 # 预处理帧
                 frame = self._preprocess_frame(frame)
@@ -434,7 +459,7 @@ class VideoProcessor:
                 # 创建处理后的帧对象
                 processed_frame = ProcessedFrame(
                     frame_id=frame_id,
-                    timestamp=time.time(),
+                    timestamp=current_time,
                     original_frame=frame,
                     annotated_frame=result.annotated_frame,
                     detection_result=result
@@ -453,8 +478,66 @@ class VideoProcessor:
                     print(f"[视频处理器] 发送帧 {frame_id} 到前端")
                     await self.on_frame_processed(processed_frame)
                     print(f"[视频处理器] 帧 {frame_id} 发送完成")
+                                    
+                    # 【关键优化】帧率控制：基于理想时间戳同步
+                    current_time_after_send = time.time()
+                    processing_time = current_time_after_send - current_time
+                    
+                    # 【动态跳帧】记录处理时间
+                    recent_processing_times.append(processing_time)
+                    if len(recent_processing_times) > max_recent_count:
+                        recent_processing_times.pop(0)
+                    
+                    # 计算下一帧的预期发送时间
+                    expected_next_frame_time = expected_frame_time + frame_duration
+                    
+                    # 如果当前帧发送早于预期，sleep 到预期时间
+                    if current_time_after_send < expected_next_frame_time:
+                        sleep_time = expected_next_frame_time - current_time_after_send
+                        
+                        # 【防止视频加速】限制最大 sleep 时间不超过帧间隔的 2 倍
+                        max_sleep = frame_duration * 2
+                        if sleep_time > max_sleep:
+                            print(f"[视频处理器] ⚠️ 检测到时间偏差过大！计划 sleep {sleep_time*1000:.1f}ms，限制为 {max_sleep*1000:.1f}ms")
+                            sleep_time = max_sleep
+                            # 重置预期时间，避免继续追赶
+                            expected_frame_time = current_time_after_send
+                        
+                        await asyncio.sleep(sleep_time)
+                        actual_send_time = time.time()
+                        print(f"[视频处理器] 帧率同步：sleep {sleep_time*1000:.1f}ms (处理耗时 {processing_time*1000:.1f}ms, 目标间隔 {frame_duration*1000:.1f}ms)")
+                    else:
+                        # 已经超时，直接更新预期时间，不追赶
+                        actual_send_time = current_time_after_send
+                        print(f"[视频处理器] 警告：帧超时 {processing_time*1000:.1f}ms (目标间隔 {frame_duration*1000:.1f}ms)")
+                        
+                        # 【防止视频加速】如果超时太多，重置预期时间到当前时间
+                        timeout_threshold = frame_duration * 3
+                        if actual_send_time - expected_next_frame_time > timeout_threshold:
+                            print(f"[视频处理器] ⚠️ 严重超时！重置预期时间轴")
+                            expected_frame_time = actual_send_time
+                        else:
+                            # 更新预期帧时间（基于理想节奏，避免累积误差）
+                            expected_frame_time = expected_next_frame_time
+                    
+                    # 【动态跳帧】每 30 帧评估一次，自动调整跳帧间隔
+                    if frame_id > 0 and frame_id % 30 == 0:
+                        avg_processing_time = sum(recent_processing_times) / len(recent_processing_times)
+                        
+                        # 如果平均处理时间超过帧间隔的 80%，增加跳帧
+                        if avg_processing_time > frame_duration * 0.8:
+                            old_skip = frame_skip
+                            frame_skip = min(frame_skip + 1, 5)  # 最多跳到每 5 帧处理 1 帧
+                            if frame_skip != old_skip:
+                                print(f"[视频处理器] 🚨 检测到处理延迟！平均耗时 {avg_processing_time*1000:.1f}ms > 阈值 {frame_duration*1000*0.8:.1f}ms，调整跳帧间隔：{old_skip} → {frame_skip}")
+                        # 如果平均处理时间低于帧间隔的 40% 且跳帧>1，减少跳帧
+                        elif avg_processing_time < frame_duration * 0.4 and frame_skip > 1:
+                            old_skip = frame_skip
+                            frame_skip = max(frame_skip - 1, 1)
+                            if frame_skip != old_skip:
+                                print(f"[视频处理器] ✅ 检测到处理轻松！平均耗时 {avg_processing_time*1000:.1f}ms < 阈值 {frame_duration*1000*0.4:.1f}ms，调整跳帧间隔：{old_skip} → {frame_skip}")
                 else:
-                    print(f"[视频处理器] 警告: on_frame_processed 回调为 None，帧 {frame_id} 未发送")
+                    print(f"[视频处理器] 警告：on_frame_processed 回调为 None，帧 {frame_id} 未发送")
                 
                 frame_id += 1
             
@@ -748,4 +831,8 @@ if __name__ == "__main__":
         print(f"摄像头测试失败: {e}")
     
     print("\n测试完成")
+
+
+
+
 
