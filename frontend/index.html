@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园主干道人流车流分析系统 - 系统主页</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23409EFF'/><text x='50' y='70' font-size='60' fill='white' text-anchor='middle'>T</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="top-bar-title">校园主干道人流车流分析系统</div>
+    </div>
+
+    <div class="layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="/index.html" class="nav-item active">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>
+                    <span class="nav-text">系统主页</span>
+                </a>
+                <a href="/analysis.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg></span>
+                    <span class="nav-text">视频分析</span>
+                </a>
+                <a href="/visualize.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></span>
+                    <span class="nav-text">数据可视化</span>
+                </a>
+                <a href="/ai.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1v-1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5z"/></svg></span>
+                    <span class="nav-text">AI 分析</span>
+                </a>
+                <a href="/history.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></span>
+                    <span class="nav-text">历史数据</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="page-header">
+                <h2>系统主页</h2>
+                <p class="subtitle">实时监控校园主干道交通状况</p>
+            </header>
+
+            <!-- 统计卡片 -->
+            <section class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+                    <div class="stat-info">
+                        <h4>今日人流量</h4>
+                        <div>
+                            <span class="stat-value" id="today-person">--</span>
+                            <span class="stat-unit">人次</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
+                    <div class="stat-info">
+                        <h4>今日车流量</h4>
+                        <div>
+                            <span class="stat-value" id="today-vehicle">--</span>
+                            <span class="stat-unit">辆次</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.87 17.61 14.57 19 12 19z"/></svg></div>
+                    <div class="stat-info">
+                        <h4>平均速度</h4>
+                        <div>
+                            <span class="stat-value" id="avg-speed">--</span>
+                            <span class="stat-unit">px/s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></div>
+                    <div class="stat-info">
+                        <h4>交通密度</h4>
+                        <div>
+                            <span class="stat-value" id="density">--</span>
+                            <span class="stat-unit">目标/px²</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 趋势图表 -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>今日交通流量趋势</h3>
+<!--                    <div style="display: flex; gap: 16px; align-items: center;">-->
+<!--                        <span class="legend-item">-->
+<!--                            <span class="legend-color" style="background: #578ddd;"></span>-->
+<!--                            人流量-->
+<!--                        </span>-->
+<!--                        <span class="legend-item">-->
+<!--                            <span class="legend-color" style="background: #eaa062;"></span>-->
+<!--                            车流量-->
+<!--                        </span>-->
+<!--                    </div>-->
+                </div>
+                <div id="trend-chart" style="height: 400px;"></div>
+            </section>
+
+            <!-- AI分析快捷入口 -->
+            <section class="card">
+                <div class="card-header">
+                    <h3>AI 智能分析</h3>
+                    <p style="color: #909399; font-size: 13px;">点击快速获取交通分析结果</p>
+                </div>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="quickAnalysis('peak')">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></span> 分析高峰期
+                    </button>
+                    <button class="btn btn-success" onclick="quickAnalysis('trend')">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></span> 分析交通趋势
+                    </button>
+                    <button class="btn btn-warning" onclick="quickAnalysis('ratio')">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm-7 9h-2V7h-2v5H6l6 6 6-6h-2v-5h-2v5z"/></svg></span> 分析人车比例
+                    </button>
+                </div>
+                <div id="ai-result" style="display: none; margin-top: 20px; padding: 16px; background: #f5f7fa; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: 600;">AI 分析结果</span>
+                        <button class="btn btn-default" onclick="closeAiResult()" style="padding: 4px 12px; font-size: 12px;">关闭</button>
+                    </div>
+                    <div id="ai-result-content" style="line-height: 1.8; color: #606266;"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/utils.js"></script>
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            highlightCurrentNav();
+            loadDashboardData();
+        });
+
+        // 加载仪表盘数据
+        async function loadDashboardData() {
+            try {
+                const data = await get('/api/dashboard');
+                
+                // 更新统计卡片
+                document.getElementById('today-person').textContent = data.today?.total_person || 0;
+                document.getElementById('today-vehicle').textContent = data.today?.total_vehicle || 0;
+                document.getElementById('avg-speed').textContent = (data.today?.avg_speed || 0).toFixed(1);
+                document.getElementById('density').textContent = (data.today?.avg_density || 0).toFixed(4);
+                
+                // 渲染趋势图
+                renderTrendChart(data.hourly_data);
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showMessage('加载数据失败', 'error');
+            }
+        }
+
+        // 渲染趋势图
+        function renderTrendChart(data) {
+            const chart = createChart('trend-chart');
+            if (!chart) return;
+            
+            // 将每分钟数据聚合为每 30 分钟数据
+            const aggregatedData = aggregateToHalfHourly(data);
+            
+            const times = aggregatedData?.map(item => item.time) || [];
+            const persons = aggregatedData?.map(item => item.person) || [];
+            const vehicles = aggregatedData?.map(item => item.vehicle) || [];
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' }
+                },
+                legend: {
+                    show: false
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: times,
+                    axisLabel: {
+                        interval: 'auto',
+                        rotate: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '数量'
+                },
+                series: [
+                    {
+                        name: '人流量',
+                        type: 'line',
+                        smooth: false,
+                        data: persons,
+                        itemStyle: { color: '#578ddd' },
+                        lineStyle: {
+                            width: 3,
+                            color: '#578ddd'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(87,141,221,0.3)' },
+                                { offset: 1, color: 'rgba(87,141,221,0.05)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: '车流量',
+                        type: 'line',
+                        smooth: false,
+                        data: vehicles,
+                        itemStyle: { color: '#eaa062' },
+                        lineStyle: {
+                            width: 3,
+                            color: '#eaa062'
+                        },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(234,160,98,0.3)' },
+                                { offset: 1, color: 'rgba(234,160,98,0.05)' }
+                            ])
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+            makeChartResponsive(chart);
+        }
+
+        // 将每分钟数据聚合为每 30 分钟数据
+        function aggregateToHalfHourly(data) {
+            if (!data || data.length === 0) return [];
+                    
+            const aggregated = {};
+                    
+            data.forEach(item => {
+                const time = item.time;
+                const hour = parseInt(time.split(':')[0]);
+                const minute = parseInt(time.split(':')[1]);
+                        
+                // 确定属于哪个 30 分钟时段（0-29 分为前半段，30-59 分为后半段）
+                const halfHour = minute < 30 ? '00' : '30';
+                const timeKey = `${hour.toString().padStart(2, '0')}:${halfHour}`;
+                        
+                if (!aggregated[timeKey]) {
+                    aggregated[timeKey] = {
+                        time: timeKey,
+                        person: 0,
+                        vehicle: 0,
+                        total: 0
+                    };
+                }
+                        
+                aggregated[timeKey].person += item.person || 0;
+                aggregated[timeKey].vehicle += item.vehicle || 0;
+                aggregated[timeKey].total += item.total || 0;
+            });
+                    
+            // 转换为数组并按时间排序
+            return Object.values(aggregated).sort((a, b) => a.time.localeCompare(b.time));
+        }
+        
+        // AI 快捷分析
+        async function quickAnalysis(type) {
+            const resultEl = document.getElementById('ai-result');
+            const contentEl = document.getElementById('ai-result-content');
+            
+            resultEl.style.display = 'block';
+            contentEl.innerHTML = '<div class="loading"><div class="spinner"></div>AI分析中...</div>';
+            
+            try {
+                const result = await post('/api/ai_quick_analysis', { analysis_type: type });
+                contentEl.innerHTML = renderMarkdown(result.answer);
+            } catch (error) {
+                contentEl.innerHTML = `<p style="color: #f56c6c;">分析失败: ${error.message}</p>`;
+            }
+        }
+
+        // 关闭AI结果
+        function closeAiResult() {
+            document.getElementById('ai-result').style.display = 'none';
+        }
+
+        // Markdown渲染
+        function renderMarkdown(text) {
+            if (!text) return '';
+            return text
+                .replace(/^### (.*$)/gim, '<h3 style="margin: 12px 0; color: #303133;">$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2 style="margin: 16px 0; color: #303133;">$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #409EFF;">$1</strong>')
+                .replace(/^- (.*$)/gim, '<li style="margin: 6px 0;">$1</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, '<ul style="margin: 12px 0; padding-left: 20px;">$&</ul>')
+                .replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>

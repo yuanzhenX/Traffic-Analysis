@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园主干道人流车流分析系统 - 视频分析</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23409EFF'/><text x='50' y='70' font-size='60' fill='white' text-anchor='middle'>V</text></svg>">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/analysis.css">
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="top-bar-title">校园主干道人流车流分析系统</div>
+    </div>
+
+    <div class="layout">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="/index.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>
+                    <span class="nav-text">系统主页</span>
+                </a>
+                <a href="/analysis.html" class="nav-item active">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg></span>
+                    <span class="nav-text">视频分析</span>
+                </a>
+                <a href="/visualize.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></span>
+                    <span class="nav-text">数据可视化</span>
+                </a>
+                <a href="/ai.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1v-1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5z"/></svg></span>
+                    <span class="nav-text">AI 分析</span>
+                </a>
+                <a href="/history.html" class="nav-item">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></span>
+                    <span class="nav-text">历史数据</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="page-header">
+                <h2>视频分析</h2>
+                <p class="subtitle">实时检测和分析校园主干道交通状况</p>
+            </header>
+
+            <!-- 视频分析主区域 -->
+            <div class="analysis-container">
+                <!-- 左侧：视频显示区域 -->
+                <div class="video-section">
+                    <!-- 视频显示区 -->
+                    <div class="video-display-area">
+                        <div class="video-wrapper" id="videoWrapper">
+                            <!-- 视频/摄像头画面 -->
+                            <img id="videoFrame" class="video-frame" src="" alt="视频画面" style="display: none;">
+                            
+                            <!-- 空状态提示 -->
+                            <div id="emptyState" class="video-empty-state">
+                                <div class="empty-icon"><svg viewBox="0 0 24 24" width="64" height="64"><path fill="currentColor" d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg></div>
+                                <p>请上传视频或连接摄像头开始分析</p>
+                                <p class="empty-subtitle">支持 MP4、AVI、MOV、MKV、FLV 格式</p>
+                            </div>
+                            
+                            <!-- 加载状态 -->
+                            <div id="loadingState" class="video-loading-state" style="display: none;">
+                                <div class="spinner"></div>
+                                <p>正在处理...</p>
+                            </div>
+                                                        
+                            <!-- 状态指示器 -->
+                            <div id="statusIndicator" class="status-indicator" style="display: none;">
+                                <span class="status-dot"></span>
+                                <span id="statusText">检测中</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 按钮控制区 -->
+                    <div class="control-buttons-area">
+                        <input type="file" id="videoInput" accept=".mp4,.avi,.mov,.mkv,.flv" style="display: none;">
+                                            
+                        <!-- 第一行：主要操作按钮 -->
+                        <div class="button-row main-buttons">
+                            <button class="btn btn-primary" id="btnUpload" onclick="uploadVideo()">
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></span> 上传视频
+                            </button>
+                            <button class="btn btn-primary" id="btnCamera" onclick="connectCamera()">
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg></span> 连接摄像头
+                            </button>
+                            <button class="btn btn-primary" id="btnStart" onclick="startDetection()" disabled>
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span> 开始检测
+                            </button>
+                            <button class="btn btn-primary" id="btnStop" onclick="stopDetection()" disabled>
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 6h12v12H6z"/></svg></span> 停止检测
+                            </button>
+                        </div>
+                                            
+                        <!-- 第二行：设置类按钮 -->
+                        <div class="button-row settings-row">
+                            <button class="btn btn-primary" id="btnROI" onclick="openROIModal()" disabled>
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-3.5l6-4.5-6-4.5z"/></svg></span> ROI 区域设置
+                            </button>
+                            <button class="btn btn-primary" id="btnDirection" onclick="openDirectionModal()" disabled>
+                                <span><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg></span> 方向标定
+                            </button>
+                        </div>
+                                            
+                        <!-- 提示信息 -->
+                        <div id="setupPrompt" class="setup-prompt" style="display: none;">
+                            <span class="prompt-icon"><svg viewBox="0 0 24 24" width="20" height="20" style="color: #fbbc04;"><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></span>
+                            <span class="prompt-text">请设置 ROI 区域和方向标定</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧：实时统计数据 -->
+                <div class="stats-section">
+                    <div class="stats-panel">
+                        <div class="stats-panel-header">
+                            <h3>实时统计数据</h3>
+                        </div>
+                        
+                        <div class="stats-grid">
+                            <!-- 当前人数 -->
+                            <div class="stat-item">
+                                <div class="stat-item-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+                                <div class="stat-item-info">
+                                    <span class="stat-item-label">当前人数</span>
+                                    <span class="stat-item-value" id="statPersonCount">0</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 当前车辆 -->
+                            <div class="stat-item">
+                                <div class="stat-item-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
+                                <div class="stat-item-info">
+                                    <span class="stat-item-label">当前车辆</span>
+                                    <span class="stat-item-value" id="statVehicleCount">0</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 总目标数 -->
+                            <div class="stat-item">
+                                <div class="stat-item-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-3.5l6-4.5-6-4.5z"/></svg></div>
+                                <div class="stat-item-info">
+                                    <span class="stat-item-label">总目标数</span>
+                                    <span class="stat-item-value" id="statTotalCount">0</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 平均速度 -->
+                            <div class="stat-item">
+                                <div class="stat-item-icon"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.48 2.54l2.6 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.87 17.61 14.57 19 12 19z"/></svg></div>
+                                <div class="stat-item-info">
+                                    <span class="stat-item-label">平均速度</span>
+                                    <span class="stat-item-value" id="statAvgSpeed">0 <span class="unit">px/s</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 方向统计 -->
+                        <div class="direction-stats">
+                            <h4>方向分布</h4>
+                            <div class="direction-grid">
+                                <div class="direction-item">
+                                    <span class="direction-label">北</span>
+                                    <span class="direction-value" id="dirNorth">0</span>
+                                </div>
+                                <div class="direction-item">
+                                    <span class="direction-label">南</span>
+                                    <span class="direction-value" id="dirSouth">0</span>
+                                </div>
+                                <div class="direction-item">
+                                    <span class="direction-label">西</span>
+                                    <span class="direction-value" id="dirWest">0</span>
+                                </div>
+                                <div class="direction-item">
+                                    <span class="direction-label">东</span>
+                                    <span class="direction-value" id="dirEast">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 处理信息 -->
+                        <div class="process-info">
+                            <div class="info-row">
+                                <span class="info-label">处理帧率</span>
+                                <span class="info-value" id="processFps">0 fps</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">已处理帧数</span>
+                                <span class="info-value" id="processFrames">0</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">视频源</span>
+                                <span class="info-value" id="videoSource">未连接</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ROI 设置弹窗 -->
+    <div id="roiModal" class="roi-modal" style="display: none;">
+        <div class="roi-modal-content">
+            <div class="roi-modal-header">
+                <h3>设置 ROI 区域</h3>
+                <button class="roi-close-btn" onclick="closeROIModal()">&times;</button>
+            </div>
+            <div class="roi-modal-body">
+                <p class="roi-instruction">在画面中点击设置多边形顶点，右键点击或点击"完成"结束绘制</p>
+                <div class="roi-canvas-container">
+                    <canvas id="roiCanvas"></canvas>
+                </div>
+            </div>
+            <div class="roi-modal-footer">
+                <button class="btn btn-default" onclick="clearROIPoints()">清除</button>
+                <button class="btn btn-primary" onclick="confirmROI()">完成设置</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 方向标定弹窗 -->
+    <div id="directionModal" class="roi-modal" style="display: none;">
+        <div class="roi-modal-content">
+            <div class="roi-modal-header">
+                <h3>标定道路方向</h3>
+                <button class="roi-close-btn" onclick="closeDirectionModal()">&times;</button>
+            </div>
+            <div class="roi-modal-body direction-modal-body">
+                <p class="calibration-instruction">拖动滑动条调整箭头指向，使其指向真实的北方（或道路上游方向）</p>
+                
+                <!-- 视频预览区域 -->
+                <div class="direction-video-container">
+                    <img id="directionVideoFrame" class="direction-video-frame" src="" alt="视频画面" style="display: none;">
+                    <canvas id="directionOverlayCanvas"></canvas>
+                </div>
+                
+                <!-- 方向控制区域 -->
+                <div class="direction-control-section">
+                    <div class="direction-control">
+                        <input type="range" id="directionAngle" min="0" max="360" value="0" step="1">
+                        <div class="angle-display">
+                            <span>当前角度：</span>
+                            <span id="angleValue">0°</span>
+                        </div>
+                    </div>
+                    <div class="direction-preview">
+                        <canvas id="directionCanvas" width="100" height="100"></canvas>
+                        <div class="direction-labels">
+                            <span class="dir-n">北</span>
+                            <span class="dir-e">东</span>
+                            <span class="dir-s">南</span>
+                            <span class="dir-w">西</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="roi-modal-footer">
+                <button class="btn btn-default" onclick="resetDirectionAngle()">重置</button>
+                <button class="btn btn-primary" onclick="confirmDirection()">完成设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/analysis.js"></script>
+</body>
+</html>
