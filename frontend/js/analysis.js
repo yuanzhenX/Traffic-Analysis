@@ -631,6 +631,31 @@ function drawDirectionArrow(angle) {
     ctx.fill();
 }
 
+async function getSourceResolution() {
+    // 默认后端处理分辨率
+    let videoWidth = 960;
+    let videoHeight = 540;
+
+    // 文件模式使用原始视频分辨率，用于后端 ROI 坐标缩放
+    if (state.sourceType === 'file' && state.currentFile) {
+        const video = document.createElement('video');
+        video.src = `/api/video/${state.currentFile}`;
+
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                videoWidth = video.videoWidth;
+                videoHeight = video.videoHeight;
+                resolve();
+            };
+            video.onerror = () => resolve();
+        });
+
+        video.remove();
+    }
+
+    return { videoWidth, videoHeight };
+}
+
 async function confirmROI() {
     if (state.roiPoints.length < 3) {
         showMessage('请至少设置3个点形成有效区域', 'warning');
@@ -638,31 +663,7 @@ async function confirmROI() {
     }
     
     try {
-        // 获取视频原始分辨率（用于后端坐标转换）
-        let videoWidth = 960;  // 默认后端处理分辨率
-        let videoHeight = 540;
-        
-        // 如果是文件上传，从之前加载的视频元素获取原始分辨率
-        if (state.sourceType === 'file' && state.frameData) {
-            // 从之前创建的临时视频元素获取分辨率
-            // 这里需要重新创建视频元素获取原始分辨率
-            const video = document.createElement('video');
-            video.src = `/api/video/${state.currentFile}`;
-            
-            await new Promise((resolve, reject) => {
-                video.onloadedmetadata = () => {
-                    videoWidth = video.videoWidth;
-                    videoHeight = video.videoHeight;
-                    console.log(`[ROI设置] 视频原始分辨率: ${videoWidth}x${videoHeight}`);
-                    resolve();
-                };
-                video.onerror = () => {
-                    console.warn('[ROI设置] 无法获取视频分辨率，使用默认值');
-                    resolve();
-                };
-            });
-            video.remove();
-        }
+        const { videoWidth, videoHeight } = await getSourceResolution();
         
         const response = await post('/api/set_roi', {
             points: state.roiPoints,
@@ -827,9 +828,13 @@ function resetDirectionAngle() {
 
 async function confirmDirection() {
     try {
+        const { videoWidth, videoHeight } = await getSourceResolution();
+
         // 发送方向角度到后端
         const response = await post('/api/set_roi', {
             points: state.roiPoints || [], // 只更新角度，保持 ROI 不变
+            video_width: videoWidth,
+            video_height: videoHeight,
             direction_angle: state.directionAngle
         });
         

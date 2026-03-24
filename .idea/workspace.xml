@@ -6,12 +6,19 @@
   <component name="ChangeListManager">
     <list default="true" id="e72cc76f-c7f0-41e8-b5f4-5f9b600a69f8" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/api/video.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/api/video.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/core/video_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/core/video_process.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/traffic_analysis.db" beforeDir="false" afterPath="$PROJECT_DIR$/backend/traffic_analysis.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/js/analysis.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/analysis.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/js/utils.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/utils.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="33" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">

@@ -110,17 +110,18 @@ function showMessage(message, type = 'success', duration = 3000) {
         left: 50%;
         transform: translateX(-50%);
         z-index: 9999;
+        background: #fff;
+        color: #1f2937;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px 14px;
+        line-height: 1.4;
+        max-width: min(90vw, 520px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         animation: slideDown 0.3s ease;
     `;
-    
-    const iconMap = {
-        success: '✓',
-        error: '✕',
-        warning: '⚠'
-    };
-    
-    messageEl.innerHTML = `<span>${iconMap[type]}</span><span>${message}</span>`;
+
+    messageEl.textContent = message;
     document.body.appendChild(messageEl);
     
     // 自动移除

@@ -388,6 +388,9 @@ class VideoProcessor:
             # 设置ROI
             if self.roi_points is not None:
                 self.pipeline.set_roi(self.roi_points)
+
+            # 同步方向角度到新建管线
+            self.pipeline.set_direction_angle(self.direction_angle)
             
             # 获取视频原始帧率和目标帧率
             original_fps = self.capture.video_info.fps if self.capture.video_info else 30.0

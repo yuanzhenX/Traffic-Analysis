@@ -378,7 +378,10 @@ async def set_roi(
 
         # 设置到视频处理器
         processor = get_video_processor()
-        processor.set_roi(points)
+        if len(points) >= 3:
+            processor.set_roi(points)
+        else:
+            print(f"[ROI设置] 跳过 ROI 更新，点数量不足: {len(points)}（保留现有 ROI）")
         
         # 设置方向角度（如果提供了）
         if hasattr(request, 'direction_angle') and request.direction_angle is not None:
