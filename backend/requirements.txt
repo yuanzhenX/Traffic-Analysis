@@ -40,5 +40,6 @@ requests==2.31.0   # requests: HTTP库，用于调用智谱AI API
 # aiofiles: 异步文件操作
 aiofiles==23.2.1
 
+
 # pydantic: 数据验证和设置管理
 pydantic==2.5.0

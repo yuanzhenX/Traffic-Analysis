@@ -1,12 +1,12 @@
 import asyncio
 import base64
 import time
+import cv2
+import numpy as np
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
-import cv2
-import numpy as np
 from backend.config import VideoConfig, PathConfig
 from backend.core.detect_track import DetectionPipeline, FrameResult
 

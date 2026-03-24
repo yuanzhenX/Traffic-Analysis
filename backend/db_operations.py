@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from backend.db import SessionLocal
 from backend.db.models import DetectionLog, TrafficStat
 
+
 # 解决导入路径问题（让 database 可以访问 backend）
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Index
 from sqlalchemy.sql import func
 from backend.db.base import Base
 
+
 """
 ================================================================================
 数据库模型模块 (db/models.py)

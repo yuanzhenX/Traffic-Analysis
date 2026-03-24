@@ -1,7 +1,6 @@
 import random
-from datetime import datetime, timedelta
 import numpy as np
-
+from datetime import datetime, timedelta
 from backend.db import SessionLocal
 from backend.db.models import DetectionLog, TrafficStat
 

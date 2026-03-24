@@ -7,7 +7,6 @@ from backend.db import get_db
 from backend.db.models import DetectionLog
 from backend.core.data_calc import DataStorageManager, TrafficAnalyzer, HeatmapGenerator
 
-
 """
 ================================================================================
 数据API路由模块 (api/data.py)

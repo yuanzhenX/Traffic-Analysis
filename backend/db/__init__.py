@@ -4,6 +4,7 @@ from typing import Generator
 from backend.config import DatabaseConfig
 from backend.db.base import Base
 
+
 """
 ================================================================================
 数据库初始化模块 (db/__init__.py)
