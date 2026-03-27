@@ -66,15 +66,17 @@ class ModelConfig:
     # 检测的类别列表，只关注行人和车辆
     # COCO数据集中: 0=person, 2=car, 3=motorcycle, 5=bus, 7=truck
     DETECT_CLASSES: list = [0, 2, 3, 5, 7]
-    
+
     # 类别名称映射，用于显示友好的类别名称
     CLASS_NAMES: dict = {
         0: "person",      # 行人
+        1: "bicycle",     # 自行车
         2: "car",         # 汽车
-        3: "motorcycle",  # 摩托车
-        5: "bus",         # 公交车
-        7: "truck"        # 卡车
+        3: "motorcycle"   # 摩托车
     }
+        
+    # 车辆类型集合（用于将 bicycle/motorcycle/car 归为 vehicle 类）
+    VEHICLE_CLASSES: set = frozenset([1, 2, 3])  # bicycle, car, motorcycle
 
 
 # 路径配置类

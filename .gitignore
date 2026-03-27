@@ -6,3 +6,5 @@ backend/models/
 
 # 静态文件（上传视频、输出结果等）
 backend/static/
+train_model/images/
+train_model/train_video.mp4

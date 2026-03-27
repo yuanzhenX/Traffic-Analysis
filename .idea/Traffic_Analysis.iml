@@ -4,6 +4,7 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/backend/models" />
       <excludeFolder url="file://$MODULE_DIR$/backend/static" />
+      <excludeFolder url="file://$MODULE_DIR$/train_model/images" />
     </content>
     <orderEntry type="jdk" jdkName="traffic_AI" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

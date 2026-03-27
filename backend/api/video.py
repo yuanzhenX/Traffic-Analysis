@@ -446,18 +446,15 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
 
                 if current_time - last_save_time >= 1.0:
                     try:
-                        loop = asyncio.get_event_loop()
-
-                        await loop.run_in_executor(
-                            None,
-                            lambda: storage_manager.save_detections(
-                                detections, stats.timestamp
-                            )
-                        )
+                        # 同线程执行，避免线程池下 Session 并发问题
+                        storage_manager.save_detections(detections, stats.timestamp)
+                        # 每分钟聚合一次 traffic_stat（内部按时间间隔控制）
+                        storage_manager.aggregate_minute_stats()
 
                         last_save_time = current_time
 
                     except Exception as save_error:
+                        db.rollback()
                         print(f"[WebSocket] 数据保存失败: {save_error}")
 
                 # 发送数据

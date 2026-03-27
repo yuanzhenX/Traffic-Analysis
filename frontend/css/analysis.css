@@ -569,7 +569,7 @@
     flex: 1;
     height: 6px;
     -webkit-appearance: none;
-    background: linear-gradient(to right, var(--primary-color), var(--success-color));
+    background: linear-gradient(to right, #bfc5cc, #8f98a3);
     border-radius: 3px;
     outline: none;
 }
@@ -578,7 +578,7 @@
     -webkit-appearance: none;
     width: 18px;
     height: 18px;
-    background: var(--primary-color);
+    background: #707781;
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);

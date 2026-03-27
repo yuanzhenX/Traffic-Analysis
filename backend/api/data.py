@@ -371,19 +371,30 @@ async def get_dashboard(db: Session = Depends(get_db)) -> Dict[str, Any]:
         # 今日统计
         today = storage.get_today_stats()
 
-        # 今日每 30 分钟数据
+        # 今日分钟级数据
         now = datetime.now()
         start_of_day = now.replace(hour=0, minute=0, second=0)
-        hourly_stats = storage.get_traffic_stats(start_of_day, now)
+        minute_stats = storage.get_traffic_stats(start_of_day, now)
 
-        # 将每分钟数据转换为每 30 分钟数据
+        # 将每分钟数据按 30 分钟分桶聚合，用于首页图表展示
+        half_hour_bins: Dict[datetime, Dict[str, int]] = {}
+        for stat in minute_stats:
+            bucket_minute = 0 if stat.time_slot.minute < 30 else 30
+            bucket_time = stat.time_slot.replace(minute=bucket_minute, second=0, microsecond=0)
+            if bucket_time not in half_hour_bins:
+                half_hour_bins[bucket_time] = {"person": 0, "vehicle": 0}
+            half_hour_bins[bucket_time]["person"] += stat.person_count
+            half_hour_bins[bucket_time]["vehicle"] += stat.vehicle_count
+
         half_hourly_data = []
-        for stat in hourly_stats:
+        for bucket_time in sorted(half_hour_bins.keys()):
+            person = half_hour_bins[bucket_time]["person"]
+            vehicle = half_hour_bins[bucket_time]["vehicle"]
             half_hourly_data.append({
-                "time": stat.time_slot.strftime("%H:%M"),
-                "person": stat.person_count,
-                "vehicle": stat.vehicle_count,
-                "total": stat.person_count + stat.vehicle_count
+                "time": bucket_time.strftime("%H:%M"),
+                "person": person,
+                "vehicle": vehicle,
+                "total": person + vehicle
             })
 
         # 高峰时段

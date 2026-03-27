@@ -680,9 +680,10 @@ class DetectionPipeline:
             self.trajectory_manager.remove_track(track_id)
         self.active_tracks = current_tracks
         
-        # 步骤5: 统计信息
+        # 步骤 5: 统计信息（根据新分类：person 和 vehicle）
         person_count = sum(1 for d in detection_results if d.class_name == "person")
-        vehicle_count = sum(1 for d in detection_results if d.class_name != "person")
+        # vehicle 包括 bicycle, car, motorcycle
+        vehicle_count = sum(1 for d in detection_results if d.class_id in ModelConfig.VEHICLE_CLASSES)
         
         # 计算平均速度
         if detection_results:
@@ -725,13 +726,12 @@ class DetectionPipeline:
         返回:
             np.ndarray: 标注后的帧图像
         """
-        # 定义颜色映射
+        # 定义颜色映射（更新为新类别）
         colors = {
-            "person": (0, 255, 0),      # 绿色: 行人
-            "car": (255, 0, 0),         # 蓝色: 汽车
-            "motorcycle": (0, 0, 255),  # 红色: 摩托车
-            "bus": (255, 255, 0),       # 青色: 公交车
-            "truck": (255, 0, 255)      # 紫色: 卡车
+            "person": (0, 255, 0),      # 绿色：行人
+            "bicycle": (128, 0, 128),   # 紫色：自行车
+            "car": (255, 0, 0),         # 蓝色：汽车
+            "motorcycle": (0, 0, 255),  # 红色：摩托车
         }
         
         # 绘制ROI区域
@@ -792,10 +792,10 @@ class DetectionPipeline:
                 for point in det.trajectory[::10]:  # 每10帧画一个点
                     cv2.circle(frame, point, 3, color, -1)
         
-        # 绘制统计信息
+        # 绘制统计信息（使用新的分类逻辑）
         stats_text = [
             f"Persons: {sum(1 for d in detections if d.class_name == 'person')}",
-            f"Vehicles: {sum(1 for d in detections if d.class_name != 'person')}",
+            f"Vehicles: {sum(1 for d in detections if d.class_id in ModelConfig.VEHICLE_CLASSES)}",
             f"Total: {len(detections)}"
         ]
         

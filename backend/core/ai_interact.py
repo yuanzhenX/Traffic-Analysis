@@ -140,6 +140,11 @@ class PromptBuilder:
         3. 提供交通管理优化建议
         4. 用通俗易懂的语言解释数据洞察
         
+        重要说明:
+        - 数据类型：person(行人), vehicle(包括 bicycle 自行车、car 汽车、motorcycle 摩托车)
+        - person_count: 行人数量
+        - vehicle_count: 车辆总数（自行车 + 汽车 + 摩托车）
+        
         注意事项:
         - 回答要简洁明了，避免过于技术化
         - 提供具体的数据支撑你的结论

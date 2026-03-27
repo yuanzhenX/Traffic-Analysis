@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, select
-from backend.config import VideoConfig
+from backend.config import VideoConfig, ModelConfig
 from backend.db.models import DetectionLog, TrafficStat
 
 
@@ -84,13 +84,14 @@ class RealtimeStatsCalculator:
             self.roi_area = roi_area
 
     # 计算实时统计数据
-    def calculate(self, detections: List[Dict[str, Any]]) -> RealtimeStats:  # detections为检测结果列表，每个元素为字典
-
+    def calculate(self, detections: List[Dict[str, Any]]) -> RealtimeStats:  # detections 为检测结果列表，每个元素为字典
+    
         timestamp = datetime.now()
-
-        # 统计人车数量
+    
+        # 统计人车数量（使用新的分类逻辑）
         person_count = sum(1 for d in detections if d.get("class_name") == "person")
-        vehicle_count = len(detections) - person_count
+        # vehicle 包括 bicycle, car, motorcycle
+        vehicle_count = sum(1 for d in detections if d.get("class_id") in ModelConfig.VEHICLE_CLASSES)
 
         # 计算平均速度
         if detections:
@@ -146,7 +147,7 @@ class DataStorageManager:
     def __init__(self, db_session: Session):
         self.db = db_session
         self._last_aggregate_time: Optional[datetime] = None  # 上一次统计的时间
-        self._aggregate_interval = 1800  # 每 30 分钟统计一次（1800 秒）
+        self._aggregate_interval = 60  # 每 1 分钟统计一次（60 秒）
 
     # 将检测结果存进数据库
     def save_detections(self, detections: List[Dict[str, Any]], timestamp: Optional[datetime] = None) -> None:
@@ -189,12 +190,10 @@ class DataStorageManager:
             if elapsed < self._aggregate_interval:
                 return None
 
-        # 计算本分钟的时间范围
-        # 取整到 30 分钟间隔（每小时的 00 分和 30 分）
-        minute = 30 if current_time.minute >= 30 else 0
-        time_slot = current_time.replace(minute=minute, second=0, microsecond=0)
-        start_time = time_slot - timedelta(minutes=30)
-        end_time = time_slot
+        # 计算本分钟的时间范围（[time_slot, time_slot + 1分钟)）
+        time_slot = current_time.replace(second=0, microsecond=0)
+        start_time = time_slot
+        end_time = time_slot + timedelta(minutes=1)
 
         # 查询该时间段的检测数据
         logs = self.db.query(DetectionLog).filter(
@@ -207,17 +206,17 @@ class DataStorageManager:
         if not logs:
             return None
 
-        # 统计人车数量
+        # 统计人车数量（使用新的分类逻辑）
         person_count = sum(1 for log in logs if log.object_type == "person")
-        vehicle_count = len(logs) - person_count
+        # vehicle 包括 bicycle, car, motorcycle
+        vehicle_count = sum(1 for log in logs if log.object_type in ["bicycle", "car", "motorcycle"])
 
         # 计算平均速度
         speeds = [log.pixel_speed for log in logs if log.pixel_speed > 0]
         avg_speed = sum(speeds) / len(speeds) if speeds else 0.0
 
-        # 计算密度（使用最新的检测数据）
-        latest_logs = [log for log in logs if log.timestamp >= end_time - timedelta(seconds=5)]
-        density = len(latest_logs) / (VideoConfig.FRAME_WIDTH * VideoConfig.FRAME_HEIGHT) if latest_logs else 0.0
+        # 计算密度（按该分钟全部样本）
+        density = len(logs) / (VideoConfig.FRAME_WIDTH * VideoConfig.FRAME_HEIGHT)
 
         # 统计方向
         direction_counts = defaultdict(int)
@@ -225,26 +224,28 @@ class DataStorageManager:
             if log.direction != "Unknown":
                 direction_counts[log.direction] += 1
 
-        # 创建统计记录
-        stat = TrafficStat(
-            time_slot=time_slot,
-            person_count=person_count,
-            vehicle_count=vehicle_count,
-            avg_speed=avg_speed,
-            density=density,
-            east_count=direction_counts.get("East", 0),
-            west_count=direction_counts.get("West", 0),
-            south_count=direction_counts.get("South", 0),
-            north_count=direction_counts.get("North", 0)
-        )
+        # 创建或更新该分钟统计记录（time_slot有唯一索引）
+        stat = self.db.query(TrafficStat).filter(
+            TrafficStat.time_slot == time_slot
+        ).first()
+        if stat is None:
+            stat = TrafficStat(time_slot=time_slot)
+            self.db.add(stat)
 
-        # 保存到数据库
-        self.db.add(stat)
+        stat.person_count = person_count
+        stat.vehicle_count = vehicle_count
+        stat.avg_speed = avg_speed
+        stat.density = density
+        stat.east_count = direction_counts.get("East", 0)
+        stat.west_count = direction_counts.get("West", 0)
+        stat.south_count = direction_counts.get("South", 0)
+        stat.north_count = direction_counts.get("North", 0)
+
         self.db.commit()
 
         self._last_aggregate_time = current_time
 
-        print(f"[数据存储] 30 分钟统计已生成：{time_slot}, 行人:{person_count}, 车辆:{vehicle_count}")
+        print(f"[数据存储] 1 分钟统计已生成：{time_slot}, 行人:{person_count}, 车辆:{vehicle_count}")
 
         return stat
 

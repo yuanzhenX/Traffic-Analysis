@@ -9,6 +9,7 @@
 const state = {
     isConnected: false,
     isDetecting: false,
+    isPaused: false,
     sourceType: null, // 'file' 或 'camera'
     currentFile: null,
     roiPoints: [],
@@ -85,6 +86,8 @@ async function handleFileSelect(event) {
             state.currentFile = result.filename;
             state.sourceType = 'file';
             state.isConnected = true;
+            state.isDetecting = false;
+            state.isPaused = false;
                     
             // 获取视频帧用于预览和 ROI 设置
             await loadVideoFrame(result.filename);
@@ -120,6 +123,8 @@ async function connectCamera() {
         state.sourceType = 'camera';
         state.isConnected = true;
         state.currentFile = null;
+        state.isDetecting = false;
+        state.isPaused = false;
                 
         // 使用默认图像提示用户设置 ROI
         showMessage('摄像头已连接，请设置 ROI 区域和方向标定', 'success');
@@ -267,25 +272,38 @@ async function startDetection() {
     }
     
     try {
-        const requestData = {
-            source_type: state.sourceType,
-            filename: state.currentFile
-        };
-        
-        const response = await post('/api/start_detection', requestData);
-        
-        if (response.success) {
+        let response;
+
+        if (state.isPaused) {
+            response = await post('/api/pause_detection', {});
+            if (!response.success || response.is_paused) {
+                throw new Error(response.message || '恢复检测失败');
+            }
+            state.isPaused = false;
             state.isDetecting = true;
-            showMessage('检测已开始', 'success');
-            updateUIState();
-            showStatusIndicator(true);
-            
-            // 连接WebSocket接收实时数据
-            connectWebSocket();
+            showMessage(response.message || '检测已恢复', 'success');
         } else {
-            throw new Error(response.message || '启动失败');
+            const requestData = {
+                source_type: state.sourceType,
+                filename: state.currentFile
+            };
+
+            response = await post('/api/start_detection', requestData);
+            if (!response.success) {
+                throw new Error(response.message || '启动失败');
+            }
+
+            state.isDetecting = true;
+            state.isPaused = false;
+            showMessage('检测已开始', 'success');
         }
-        
+
+        updateUIState();
+        showStatusIndicator(true);
+
+        // 连接WebSocket接收实时数据
+        connectWebSocket();
+
     } catch (error) {
         console.error('启动检测错误:', error);
         showMessage('启动检测失败: ' + error.message, 'error');
@@ -299,13 +317,14 @@ async function stopDetection() {
     }
     
     try {
-        const response = await post('/api/stop_detection', {});
+        const response = await post('/api/pause_detection', {});
         
         if (response.success) {
-            state.isDetecting = false;
-            showMessage('检测已停止', 'success');
+            state.isPaused = !!response.is_paused;
+            state.isDetecting = !state.isPaused;
+            showMessage(response.message || '检测已暂停', 'success');
             updateUIState();
-            showStatusIndicator(false);
+            showStatusIndicator(state.isDetecting || state.isPaused);
             
             // 关闭WebSocket
             if (state.ws) {
@@ -313,7 +332,7 @@ async function stopDetection() {
                 state.ws = null;
             }
         } else {
-            throw new Error(response.message || '停止失败');
+            throw new Error(response.message || '暂停失败');
         }
         
     } catch (error) {
@@ -712,6 +731,14 @@ function updateUIState() {
         btnStop.disabled = false;
         btnROI.disabled = true;
         btnDirection.disabled = true;
+    } else if (state.isPaused) {
+        // 暂停状态
+        btnUpload.disabled = true;
+        btnCamera.disabled = true;
+        btnStart.disabled = false;
+        btnStop.disabled = true;
+        btnROI.disabled = true;
+        btnDirection.disabled = true;
     } else {
         // 未检测状态
         btnUpload.disabled = false;
@@ -871,7 +898,7 @@ window.onbeforeunload = () => {
     if (state.ws) {
         state.ws.close();
     }
-    if (state.isDetecting) {
+    if (state.isDetecting || state.isPaused) {
         // 发送停止请求
         navigator.sendBeacon('/api/stop_detection', JSON.stringify({}));
     }
